@@ -145,6 +145,13 @@ public class EarthquakeCityMap extends PApplet {
 	// 
 	private void selectMarkerIfHover(List<Marker> markers)
 	{
+		for(Marker marker: markers) {
+			if(marker.isInside(map, mouseX, mouseY)) {
+				lastSelected = (CommonMarker) marker;
+				lastSelected.setSelected(true);
+				break;
+			}
+		}
 		// TODO: Implement this method
 	}
 	
@@ -154,8 +161,63 @@ public class EarthquakeCityMap extends PApplet {
 	 * where the city is in the threat circle
 	 */
 	@Override
-	public void mouseClicked()
-	{
+	public void mouseClicked() {
+		if (lastClicked != null) {
+			lastClicked.setSelected(false);
+			lastClicked = null;
+			unhideMarkers();
+		}
+		
+		if(markClicked(quakeMarkers, mouseX, mouseY) || markClicked(cityMarkers, mouseX, mouseY)) {
+			//an earthquake's marker is selected, hide the markers are unselected and out of threaten range
+			if(lastClicked instanceof EarthquakeMarker) {
+				hideUnselected(quakeMarkers);
+				hideOutsideThreatCircle(cityMarkers);
+			}
+			//an cityMarker is selected, hide the markers are unselected and out of threaten range
+			else {
+				hideUnselected(cityMarkers);
+				hideUnaffectingQuake(quakeMarkers);
+			}
+
+		}
+	}
+
+	public void hideUnselected(List<Marker> markers) {
+		for (Marker marker : markers) {
+			if (marker != lastClicked) {
+				marker.setHidden(true);
+			}
+		}
+	}
+
+	private void hideOutsideThreatCircle(List<Marker> markers) {
+		for(Marker cityMarker : markers) {
+			if(cityMarker.getLocation().getDistance(lastClicked.getLocation())
+					> ((EarthquakeMarker) lastClicked).threatCircle()) {
+				cityMarker.setHidden(true);
+			}
+		}
+	}
+
+	private void hideUnaffectingQuake(List<Marker> markers) {
+		for(Marker quakeMarker : markers) {
+			if(quakeMarker.getLocation().getDistance(lastClicked.getLocation())
+					> ((EarthquakeMarker) quakeMarker).threatCircle()) {
+				quakeMarker.setHidden(true);
+			}
+		}
+	}
+
+	public boolean markClicked(List<Marker> markers,float x, float y ) {
+		for(Marker mark : markers) {
+			if (mark.isInside(map, mouseX, mouseY)) {
+				lastClicked = (CommonMarker) mark;
+				lastClicked.setSelected(true);
+				return true;
+			}
+		}
+		return false;
 		// TODO: Implement this method
 		// Hint: You probably want a helper method or two to keep this code
 		// from getting too long/disorganized
